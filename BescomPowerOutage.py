@@ -8,10 +8,18 @@ import re
 from pyspark.sql import SparkSession
 import csv
 from pyspark.sql import functions as f
+import http.client as http
 
+http.HTTPConnection._http_vsn = 10
+http.HTTPConnection._http_vsn_str = 'HTTP/1.0'
 
 main_page = 'https://www.bescom.org/upo/public.php'
-uMain = uReq(main_page)
+
+try:
+    uMain = uReq(main_page)
+except  http.IncompleteRead as e:
+    uMain = e.partial
+
 main_page_soup = soup(uMain.read(), "html.parser")
 uMain.close()
 
@@ -34,11 +42,11 @@ if MainConentTag is not None:
             tdList = []
             for AlTd in AllTds:
                 # print(AlTd.text)
-                tdList.append(AlTd.text)
+                tdList.append(str(AlTd.text).replace('\"', '').replace("\n", "").strip())
             trList.append(tdList)
 
 with open('C:\\Users\\Owner\\Documents\\datasets\\BesCom.csv', 'w', newline='\n', encoding='utf-8') as myfile:
-    wr = csv.writer(myfile)  # , quoting=csv.QUOTE_ALL)
+    wr = csv.writer(myfile, delimiter='|')
     wr.writerow(thList)
     for val in trList:
         wr.writerow(val)
@@ -48,10 +56,10 @@ spark = SparkSession.builder.appName("BescomOutage").config("spark.sql.shuffle.p
 
 spark.sparkContext.setLogLevel("OFF")
 
-dataframe = spark.read.format("csv").option("header", "True").load('C:\\Users\\Owner\\Documents\\datasets\\BesCom.csv')
-dataframe.select(f.trim(dataframe['Circle'])).show(100,truncate=False)
+dataframe = spark.read.format("csv").option("header", "True").option("delimiter", "|").load(
+    'C:\\Users\\Owner\\Documents\\datasets\\BesCom.csv')
 dataframe.show(100, truncate=False)
-dataframe
+
 
 spark.stop
 '''
