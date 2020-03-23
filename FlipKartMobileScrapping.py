@@ -668,13 +668,13 @@ for page_num in range(start, end + 1):
                                                                                                         NegFeedBackTag=PosNegFeedFackMainTagDiv.find("span",{"class":"_3MuE_5"})
                                                                                                         if NegFeedBackTag is not None:
                                                                                                             FeedBackMap['Negative']=re.sub("[^\\d+]","",NegFeedBackTag.text)
-                                                                                                            ImageReviewRating[CriteraText]['Feedback']=FeedBackMap
+                                                                                                            ImageReviewRating[CriteraText]['FeedbackPercentage']=FeedBackMap
                                                         AllReviewsAndRatingsStars['CategoryReview'] = ImageReviewRating
                                                     mobile_item_details[ObjIdText][
                                                         'ItmReviewRatingStars'] = AllReviewsAndRatingsStars
 
 
-with open("C:\\Users\\Owner\\Documents\\datasets\\flipkark_Mobile.json") as fp:
-    json.dump(mobile_item_details,fp)
+with open("C:\\Users\\Owner\\Documents\\datasets\\flipkark_Mobile.json",'w') as fp:
+    json.dumps(mobile_item_details,fp)
 
 print('\n','========Scrapping Ended=============','\n')
