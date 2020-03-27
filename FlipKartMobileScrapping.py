@@ -27,21 +27,23 @@ num_pages_div = main_page_soup.find("div", {"class": "_2zg3yZ"})
 span = str(num_pages_div.find("span").text)
 span = re.sub("[^\d\\s+]", "", span)
 start, end = map(int, span.split())
-
+UrlsProcessed=0
 print('Start :', start, 'End:', end)
-#end = 1
+end = 1
 for page_num in range(start, end + 1):
-    curr_url = main_page + '&page=' + str(page_num)
+    #curr_url = main_page + '&page=' + str(page_num)
+    curr_url='https://www.flipkart.com/search?q=mobiles&otracker=AS_Query_HistoryAutoSuggest_5_0&otracker1=AS_Query_HistoryAutoSuggest_5_0&marketplace=FLIPKART&as-show=on&as=off&as-pos=5&as-type=HISTORY&p%5B%5D=facets.brand%255B%255D%3DApple'
     try:
         uCurrPage = uReq(curr_url)
     except http.IncompleteRead as e:
         uCurrPage = e.partial
+        print('Partial')
 
     uCurrPageSoup = soup(uCurrPage.read(), "html.parser")
     uCurrPage.close()
     MainTopMostDivs = uCurrPageSoup.findAll("div", {"class": "_1HmYoV _35HD7C"})
     # MainTopMostDivs = uCurrPageSoup.find("div", {"class": "_1HmYoV _35HD7C"}) ##Remove
-    # print(MainTopMostDivs)
+    #print(MainTopMostDivs)
     for MainTopMostDiv in MainTopMostDivs:
         AllItemsDivs = MainTopMostDiv.findAll("div", {"class": "bhgxx2 col-12-12"})
         for AllItemsDiv in AllItemsDivs:
@@ -56,10 +58,16 @@ for page_num in range(start, end + 1):
                     if IteamAClass is not None:
                         mobile_item_details[ObjIdText] = {'url': base_url + IteamAClass['href']}
                         ItemsURL = base_url + IteamAClass['href']
+                        OutofStockAllTag=IteamAClass.find("div",{"class":'_1OCn9C'})
+                        if OutofStockAllTag is not None:
+                            OutOfStockFistDiv=OutofStockAllTag.find("div",{"class":"_3aV9Tq"})
+                            if OutOfStockFistDiv is not None:
+                                OutOfStockSpanTag=OutOfStockFistDiv.find("span",{"class":"_1GJ2ZM"})
+                                if OutOfStockSpanTag is not None:
+                                    mobile_item_details[ObjIdText]['InStock']=OutOfStockSpanTag.text
                         ItemAllTextDetails = IteamAClass.find("div", {"class": "_1-2Iqu row"})
                         if ItemAllTextDetails is not None:
                             ItemAllTextDetailsDefAmts = ItemAllTextDetails.findAll("div", {"class": "col col-7-12"})
-
                             for ItemAllTextDetailsDefAmt in ItemAllTextDetailsDefAmts:
                                 ItemNameTag = ItemAllTextDetailsDefAmt.find("div", {"class": "_3wU53n"})
                                 if ItemNameTag is not None:
@@ -123,13 +131,15 @@ for page_num in range(start, end + 1):
                                 for otherDiscountOffer in otherDiscountOffers:
                                     emiDivs = otherDiscountOffer.findAll("div", {"class": "_3_G5Wj"})
                                     for emiDiv in emiDivs:
-                                        otherOffers.append(emiDiv.text)
+                                        otherOffers.append(str(emiDiv.text).replace('\u20b9','Rs '))
                                 price_details_dict['otherOffers'] = otherOffers
                                 mobile_item_details[ObjIdText]['PriceAndDiscountOffers'] = price_details_dict
 
                         ItemPage = uReq(ItemsURL)
                         ItemPageSoup = soup(ItemPage.read(), "html.parser")
                         ItemPage.close()
+                        UrlsProcessed=UrlsProcessed+1
+                        print('URLS Processed:',UrlsProcessed)
                         IndiItemsAllTextContaints = ItemPageSoup.find("div", {"class": "_1HmYoV _35HD7C col-8-12"})
                         if IndiItemsAllTextContaints is not None:
                             ItemsAllItemsTextDetails = IndiItemsAllTextContaints.findAll("div",
@@ -237,7 +247,7 @@ for page_num in range(start, end + 1):
                                                         allAvilaOffer = allAvilaOffer + ' ' + str(
                                                             AvilableOfferesAllSpan.text).replace('<strong>',
                                                                                                  '').replace(
-                                                            '</strong>', '')
+                                                            '</strong>', '').replace('\u20b9','Rs ')
                                                     allAvilaOfferList.append(allAvilaOffer)
 
                                     mobile_item_details[ObjIdText]['AvialbleOffers'] = allAvilaOfferList
@@ -673,8 +683,10 @@ for page_num in range(start, end + 1):
                                                     mobile_item_details[ObjIdText][
                                                         'ItmReviewRatingStars'] = AllReviewsAndRatingsStars
 
-
+'''
 with open("C:\\Users\\Owner\\Documents\\datasets\\flipkark_Mobile.json",'w') as fp:
-    json.dumps(mobile_item_details,fp)
-
+    json.dump(mobile_item_details,fp)
+'''
+for k,v in mobile_item_details.items():
+    print(k,' ',v)
 print('\n','========Scrapping Ended=============','\n')
